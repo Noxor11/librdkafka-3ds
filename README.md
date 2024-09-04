@@ -1,5 +1,6 @@
-librdkafka - the Apache Kafka C/C++ client library
+librdkafka-3ds - the Apache Kafka C/C++ client library
 ==================================================
+librdkafka for 3ds is a work in progress.
 
 Copyright (c) 2012-2022, [Magnus Edenhill](http://www.edenhill.se/).
               2023 [Confluent Inc.](https://www.confluent.io/).
