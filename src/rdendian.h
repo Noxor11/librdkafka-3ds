@@ -136,7 +136,11 @@
          (((x)&0x00ff000000000000L) >> 40) |                                   \
          (((x)&0xff00000000000000L) >> 56))
 #else
+#ifdef __3DS__
+#include <sys/endian.h>
+#else
 #include <endian.h>
+#endif
 #endif
 
 

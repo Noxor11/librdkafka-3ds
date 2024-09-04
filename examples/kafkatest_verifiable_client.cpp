@@ -46,6 +46,14 @@
 #include <ctype.h>
 #include <strings.h>
 
+// #ifdef __3DS__
+#include <3ds.h>
+
+unsigned int alarm(unsigned int __secs) {
+  return -1;
+}
+// #endif
+
 #ifdef _WIN32
 #include "../win32/wingetopt.h"
 #elif _AIX

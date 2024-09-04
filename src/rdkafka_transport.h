@@ -35,6 +35,7 @@
 
 #include "rdbuf.h"
 #include "rdaddr.h"
+#include "3ds_socket_msg.h"
 
 typedef struct rd_kafka_transport_s rd_kafka_transport_t;
 

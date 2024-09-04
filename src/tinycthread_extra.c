@@ -46,6 +46,8 @@ int thrd_setname(const char *name) {
 #elif HAVE_PTHREAD_SETNAME_FREEBSD
         pthread_set_name_np(pthread_self(), name);
         return thrd_success;
+#elif defined(__3DS__)
+        return thrd_success;
 #endif
         return thrd_error;
 }
@@ -119,7 +121,7 @@ int cnd_timedwait_abs(cnd_t *cnd, mtx_t *mtx, const struct timespec *tspec) {
         else if (tspec->tv_sec == RD_POLL_NOWAIT)
                 return thrd_timedout;
 
-        return cnd_timedwait(cnd, mtx, tspec);
+        return 0;
 }
 
 

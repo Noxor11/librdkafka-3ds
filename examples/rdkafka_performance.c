@@ -58,6 +58,15 @@
 #include "../win32/wintime.h"
 #endif
 
+// #ifdef __3DS__
+FILE *popen(const char *, const char *) {
+        return NULL;
+}
+
+int pclose(FILE *) {
+        return 0;
+}
+// #endif
 
 static volatile sig_atomic_t run = 1;
 static int forever               = 1;

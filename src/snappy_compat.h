@@ -50,7 +50,11 @@
 
 
 #elif !defined(__WIN32__) && !defined(_MSC_VER) && !defined(__sun) && !defined(_AIX)
+#ifdef __3DS__
+#  include <sys/endian.h>
+#else
 #  include <endian.h>
+#endif
 #endif
 
 #include <stdlib.h>
@@ -59,7 +63,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <limits.h>
-#if !defined(__WIN32__) && !defined(_MSC_VER)
+#if (!defined(__WIN32__) && !defined(_MSC_VER)) && !defined(__3DS__)
 #include <sys/uio.h>
 #endif
 

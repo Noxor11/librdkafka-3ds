@@ -38,6 +38,7 @@
 #include "rdkafka_interceptor.h"
 
 #include <signal.h>
+#include <3ds.h>
 
 /**
  * @brief Call the registered background_event_cb.

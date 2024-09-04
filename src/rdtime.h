@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <time.h>
 #ifndef _RDTIME_H_
 #define _RDTIME_H_
 
@@ -201,8 +202,10 @@ static RD_INLINE void rd_timeout_init_timespec_us(struct timespec *tspec,
                 struct timeval tv;
                 gettimeofday(&tv, NULL);
                 TIMEVAL_TO_TIMESPEC(&tv, tspec);
-#else
+#elif !defined(__3DS__)
                 timespec_get(tspec, TIME_UTC);
+#else
+                timespec2nsec(tspec);
 #endif
                 tspec->tv_sec += timeout_us / 1000000;
                 tspec->tv_nsec += (timeout_us % 1000000) * 1000;
@@ -231,8 +234,10 @@ static RD_INLINE void rd_timeout_init_timespec(struct timespec *tspec,
                 struct timeval tv;
                 gettimeofday(&tv, NULL);
                 TIMEVAL_TO_TIMESPEC(&tv, tspec);
-#else
+#elif !defined(__3DS__)
                 timespec_get(tspec, TIME_UTC);
+#else
+                timespec2nsec(tspec);
 #endif
                 tspec->tv_sec += timeout_ms / 1000;
                 tspec->tv_nsec += (timeout_ms % 1000) * 1000000;

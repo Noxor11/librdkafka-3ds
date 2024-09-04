@@ -40,6 +40,7 @@
 #include "rdkafka_transport_int.h"
 #include "rdkafka_broker.h"
 #include "rdkafka_interceptor.h"
+#include "3ds_socket_msg.h"
 
 #include <errno.h>
 
@@ -62,6 +63,86 @@
  *   rd_kafka_transport_t pointer directly in the thread-local memory. */
 RD_TLS rd_kafka_transport_t *rd_kafka_curr_transport;
 
+#ifdef __3DS__
+#include <memory.h>
+
+ssize_t sendmsg(int sockfd, const msghdr *msg, int flags) {
+    ssize_t total_bytes_sent = 0;
+
+    // Check the validity of the input parameters
+    if (msg == NULL || msg->msg_iov == NULL || msg->msg_iovlen <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    // Iterate over the iovec array and send each buffer
+    for (int i = 0; i < msg->msg_iovlen; ++i) {
+        iovec *iov = &msg->msg_iov[i];
+        ssize_t bytes_sent = send(sockfd, iov->iov_base, iov->iov_len, flags);
+
+        if (bytes_sent < 0) {
+            return -1;
+        }
+
+        total_bytes_sent += bytes_sent;
+
+        // Check if we sent less than the iov_len
+        if (bytes_sent < iov->iov_len) {
+            // If the send was incomplete, stop and return the total sent so far
+            break;
+        }
+    }
+
+    printf("sent %d bytes!\n", total_bytes_sent);
+
+    return total_bytes_sent;
+}
+
+        
+
+
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
+    ssize_t total_bytes_received = 0;
+    ssize_t bytes_received;
+
+    // Validate input
+    if (msg == NULL || msg->msg_iov == NULL || msg->msg_iovlen <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    // Loop through each iovec in msg_iov array
+    for (int i = 0; i < msg->msg_iovlen; ++i) {
+        struct iovec *iov = &msg->msg_iov[i];
+        size_t to_receive = iov->iov_len;
+        char *buffer = (char *)iov->iov_base;
+
+        // Receive the data
+        while (to_receive > 0) {
+            bytes_received = recv(sockfd, buffer, to_receive, flags);
+            if (bytes_received == -1) {
+                if (errno == EINTR) {
+                    continue;  // Interrupted, retry the recv call
+                }
+                return -1;
+            } else if (bytes_received == 0) {
+                // Connection closed by the peer
+                return total_bytes_received;
+            }
+
+            // Move the buffer pointer and decrease the amount to receive
+            buffer += bytes_received;
+            to_receive -= bytes_received;
+            total_bytes_received += bytes_received;
+        }
+    }
+
+    printf("read %d bytes!\n", total_bytes_received);
+
+    return total_bytes_received;
+}
+
+#endif
 
 static int rd_kafka_transport_poll(rd_kafka_transport_t *rktrans, int tmout);
 
@@ -576,7 +657,7 @@ void rd_kafka_transport_post_connect_setup(rd_kafka_transport_t *rktrans) {
         slen = sizeof(rktrans->rktrans_rcvbuf_size);
         if (getsockopt(rktrans->rktrans_s, SOL_SOCKET, SO_RCVBUF,
                        (void *)&rktrans->rktrans_rcvbuf_size,
-                       &slen) == RD_SOCKET_ERROR) {
+                       (socklen_t*)&slen) == RD_SOCKET_ERROR) {
                 rd_rkb_log(rkb, LOG_WARNING, "RCVBUF",
                            "Failed to get socket receive "
                            "buffer size: %s: assuming 1MB",
@@ -589,7 +670,7 @@ void rd_kafka_transport_post_connect_setup(rd_kafka_transport_t *rktrans) {
         slen = sizeof(rktrans->rktrans_sndbuf_size);
         if (getsockopt(rktrans->rktrans_s, SOL_SOCKET, SO_SNDBUF,
                        (void *)&rktrans->rktrans_sndbuf_size,
-                       &slen) == RD_SOCKET_ERROR) {
+                       (socklen_t*)&slen) == RD_SOCKET_ERROR) {
                 rd_rkb_log(rkb, LOG_WARNING, "RCVBUF",
                            "Failed to get socket send "
                            "buffer size: %s: assuming 1MB",

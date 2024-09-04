@@ -69,7 +69,7 @@ typedef struct rd_kafka_group_member_s {
         /** Member metadata, e.g., the currently owned partitions. */
         rd_kafkap_bytes_t *rkgm_member_metadata;
         /** Group generation id. */
-        int rkgm_generation;
+        int32_t rkgm_generation;
         /** Member rack id. */
         rd_kafkap_str_t *rkgm_rack_id;
 } rd_kafka_group_member_t;

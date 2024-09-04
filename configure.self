@@ -108,10 +108,10 @@ void foo (void) {
     mkl_check "libzstd"
     mkl_check "libcurl"
 
-    if mkl_lib_check "libm" "" disable CC "-lm" \
-                     "#include <math.h>"; then
-        mkl_allvar_set WITH_HDRHISTOGRAM WITH_HDRHISTOGRAM y
-    fi
+    # if mkl_lib_check "libm" "" disable CC "-lm" \
+    #                  "#include <math.h>"; then
+    #     mkl_allvar_set WITH_HDRHISTOGRAM WITH_HDRHISTOGRAM y
+    # fi
 
     # Use builtin lz4 if linking statically or if --disable-lz4-ext is used.
     if [[ $MKL_SOURCE_DEPS_ONLY != y ]] && [[ $WITH_STATIC_LINKING != y ]] && [[ $ENABLE_LZ4_EXT == y ]]; then
@@ -207,6 +207,8 @@ void foo (void) {
 	# incompatible on that platform with compilers < c99.
 	mkl_mkvar_append CFLAGS CFLAGS "-std=c99"
     fi
+
+    mkl_mkvar_append ctru LIBS "/opt/devkitpro/libctru/lib/libctru.a"
 
     # Check if rand_r() is available
     mkl_compile_check "rand_r" "HAVE_RAND_R" disable CC "" \

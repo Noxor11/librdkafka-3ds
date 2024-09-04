@@ -74,7 +74,7 @@ const char *rd_sockaddr2str(const void *addr, int flags) {
 
                          niflags))) {
 
-                        if (r == EAI_AGAIN && !(niflags & NI_NUMERICHOST)) {
+                        if (r == TRY_AGAIN && !(niflags & NI_NUMERICHOST)) {
                                 /* If unable to resolve name, retry without
                                  * name resolution. */
                                 niflags |= NI_NUMERICHOST;
@@ -177,7 +177,7 @@ rd_getaddrinfo(const char *nodesvc,
 
         struct addrinfo *ais, *ai;
         char *node, *svc;
-        int r;
+        int r = 0;
         int cnt = 0;
         rd_sockaddr_list_t *rsal;
 

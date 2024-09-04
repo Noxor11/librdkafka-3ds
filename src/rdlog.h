@@ -28,6 +28,7 @@
 
 #ifndef _RDLOG_H_
 #define _RDLOG_H_
+#include "3ds_socket_msg.h"
 
 void rd_hexdump(FILE *fp, const char *name, const void *ptr, size_t len);
 

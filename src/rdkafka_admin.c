@@ -7298,7 +7298,7 @@ rd_kafka_ListConsumerGroupsResponse_parse(rd_kafka_op_t *rko_req,
                                           char *errstr,
                                           size_t errstr_size) {
         const int log_decode_errors = LOG_ERR;
-        int i, cnt;
+        int32_t i, cnt;
         int16_t error_code, api_version;
         rd_kafka_op_t *rko_result = NULL;
         rd_kafka_error_t *error   = NULL;

@@ -30,6 +30,7 @@
 #define _RDKAFKA_SASL_H_
 
 
+#include "3ds_socket_msg.h"
 
 int rd_kafka_sasl_recv(rd_kafka_transport_t *rktrans,
                        const void *buf,

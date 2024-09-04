@@ -37,7 +37,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <syslog.h>
+// #ifndef __3DS__
+// #include <syslog.h>
+// #endif
 #include <time.h>
 #include <sys/time.h>
 #include <getopt.h>

@@ -73,6 +73,13 @@ static void sigterm(int sig) {
   run = 0;
 }
 
+// #ifdef __3DS__
+#include <3ds.h>
+
+unsigned int alarm(unsigned int __secs) {
+  return -1;
+}
+// #endif
 
 /**
  * @brief format a string timestamp from the current time

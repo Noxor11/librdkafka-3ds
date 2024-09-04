@@ -122,13 +122,9 @@ If the version is out of date, please [create an issue or pull request](https://
 
 ### Building
 
-      ./configure
-      # Or, to automatically install dependencies using the system's package manager:
-      # ./configure --install-deps
-      # Or, build dependencies from source:
-      # ./configure --install-deps --source-deps-only
-
-      make
+      ./custom-config.sh
+      
+      make -j8
       sudo make install
 
 

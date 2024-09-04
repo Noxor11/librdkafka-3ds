@@ -36,6 +36,7 @@
 #endif
 
 #include "rdsysqueue.h"
+#include "3ds_socket_msg.h"
 
 
 /**

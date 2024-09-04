@@ -49,6 +49,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef __3DS__
+#include <3ds.h>
+#endif
+
 #include "rd.h"
 #include "rdaddr.h"
 #include "rdkafka_int.h"
@@ -3810,7 +3814,7 @@ static void rd_kafka_broker_internal_serve(rd_kafka_broker_t *rkb,
                         rd_kafka_broker_consumer_toppars_serve(rkb);
 
                         wakeup = rd_kafka_broker_ops_io_serve(rkb, abs_timeout);
-
+                        svcSleepThread(1000);
                 } while (!rd_kafka_broker_terminating(rkb) &&
                          (int)rkb->rkb_state == initial_state && !wakeup &&
                          !rd_timeout_expired(rd_timeout_remains(abs_timeout)));
@@ -3828,7 +3832,7 @@ static void rd_kafka_broker_internal_serve(rd_kafka_broker_t *rkb,
 
                         wakeup = rd_kafka_broker_ops_io_serve(
                             rkb, RD_MIN(abs_timeout, next_timeout_scan));
-
+                        svcSleepThread(1000);
                 } while (!rd_kafka_broker_terminating(rkb) &&
                          (int)rkb->rkb_state == initial_state && !wakeup &&
                          !rd_timeout_expired(rd_timeout_remains(abs_timeout)));
@@ -4253,6 +4257,7 @@ static void rd_kafka_broker_producer_serve(rd_kafka_broker_t *rkb,
         while (!rd_kafka_broker_terminating(rkb) &&
                rkb->rkb_state == initial_state &&
                (abs_timeout > (now = rd_clock()))) {
+                svcSleepThread(1000);
                 rd_bool_t do_timeout_scan;
                 rd_ts_t next_wakeup = abs_timeout;
                 rd_bool_t overshot;
@@ -4299,6 +4304,7 @@ static void rd_kafka_broker_consumer_serve(rd_kafka_broker_t *rkb,
         while (!rd_kafka_broker_terminating(rkb) &&
                rkb->rkb_state == initial_state &&
                abs_timeout > (now = rd_clock())) {
+                svcSleepThread(1000);
                 rd_ts_t min_backoff;
 
                 rd_kafka_broker_unlock(rkb);
@@ -4505,6 +4511,8 @@ rd_kafka_broker_addresses_exhausted(const rd_kafka_broker_t *rkb) {
 }
 
 
+#include <3ds.h>
+#include <time.h>
 static int rd_kafka_broker_thread_main(void *arg) {
         rd_kafka_broker_t *rkb = arg;
         rd_kafka_t *rk         = rkb->rkb_rk;
@@ -4528,6 +4536,7 @@ static int rd_kafka_broker_thread_main(void *arg) {
         rd_rkb_dbg(rkb, BROKER, "BRKMAIN", "Enter main broker thread");
 
         while (!rd_kafka_broker_terminating(rkb)) {
+                svcSleepThread(1000);
                 int backoff;
                 int r;
                 rd_kafka_broker_state_t orig_state;
@@ -4969,7 +4978,7 @@ rd_kafka_broker_t *rd_kafka_broker_add(rd_kafka_t *rk,
         rkb->rkb_wakeup_fd[1] = -1;
 
 #ifndef _WIN32
-        if ((r = rd_pipe_nonblocking(rkb->rkb_wakeup_fd)) == -1) {
+        if ((r = rd_pipe_nonblocking(rkb->rkb_wakeup_fd)) == errno) {
                 rd_rkb_log(rkb, LOG_ERR, "WAKEUPFD",
                            "Failed to setup broker queue wake-up fds: "
                            "%s: disabling low-latency mode",

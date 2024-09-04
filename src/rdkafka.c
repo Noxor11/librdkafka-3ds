@@ -141,6 +141,108 @@ void rd_kafka_set_thread_sysname(const char *fmt, ...) {
         thrd_setname(rd_kafka_thread_sysname);
 }
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <3ds.h>
+#include <pthread.h>
+
+
+int pthread_sigmask(int, const sigset_t *, sigset_t *) {
+        
+        return 0;
+}
+
+int pthread_kill(pthread_t thread, int signal) {
+        
+
+        return 0;
+}
+
+int sigaction(int, const struct sigaction *, struct sigaction *) {
+        return 0;
+}
+
+
+int pipe(int __fildes[2]) {
+
+    int listener;
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+
+
+    // Step 1: Create a listener socket
+    listener = socket(AF_INET, SOCK_STREAM, 0);
+    if (listener < 0) {
+        return -1;
+    }
+
+    // Step 2: Bind the listener to the loopback address and a random port
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;  // Let the OS pick an available port
+
+    if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        close(listener);
+        return -1;
+    }
+
+    // Step 3: Start listening for connections
+    if (listen(listener, 1) < 0) {
+        close(listener);
+        return -1;
+    }
+
+    // Step 4: Get the port number assigned by the OS
+    if (getsockname(listener, (struct sockaddr *)&addr, &addrlen) < 0) {
+        close(listener);
+        return -1;
+    }
+
+    // Step 5: Create the first socket and connect it to the listener
+    __fildes[0] = socket(AF_INET, SOCK_STREAM, 0);
+    if (__fildes[0] < 0) {
+        close(listener);
+        return -1;
+    }
+
+    if (connect(__fildes[0], (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        close(listener);
+        close(__fildes[0]);
+        return -1;
+    }
+
+    // Step 6: Accept the connection on the listener, creating the second socket
+    __fildes[1] = accept(listener, NULL, NULL);
+    if (__fildes[1] < 0) {
+        close(listener);
+        close(__fildes[0]);
+        return -1;
+    }
+
+    // Step 7: Close the listener as it is no longer needed
+    close(listener);
+    return 0;
+}
+
+
+// v is a pointer to the first element of the pair.
+// https://maskray.me/blog/2021-02-14-all-about-thread-local-storage
+// https://github.com/ers35/luakernel/blob/ecd905ed6a011c25acd180e3ada69075bbdca33c/dep/musl/src/thread/__tls_get_addr.c#L8
+// void *__tls_get_addr(size_t *v)
+// {
+//         void* localStorage = getThreadLocalStorage();
+// 	const size_t tls_index = v[1];
+
+//         return localStorage + v[0] * tls_index;
+// }
+
 static void rd_kafka_global_init0(void) {
         cJSON_Hooks json_hooks = {.malloc_fn = rd_malloc, .free_fn = rd_free};
 
@@ -2076,10 +2178,17 @@ static int rd_kafka_init_wait(rd_kafka_t *rk, int timeout_ms) {
         rd_timeout_init_timespec(&tspec, timeout_ms);
 
         mtx_lock(&rk->rk_init_lock);
-        while (rk->rk_init_wait_cnt > 0 &&
-               cnd_timedwait_abs(&rk->rk_init_cnd, &rk->rk_init_lock, &tspec) ==
-                   thrd_success)
-                ;
+
+#ifndef __3DS__
+        if (!timeout_ms){
+                while (rk->rk_init_wait_cnt > 0 &&
+                cnd_timedwait_abs(&rk->rk_init_cnd, &rk->rk_init_lock, &tspec) ==
+                        thrd_success)
+                        ;
+        }
+#else
+        svcSleepThread(tspec.tv_sec * 1'000'000'00);
+#endif
         ret = rk->rk_init_wait_cnt;
         mtx_unlock(&rk->rk_init_lock);
 
@@ -2135,6 +2244,7 @@ static int rd_kafka_thread_main(void *arg) {
         while (likely(!rd_kafka_terminating(rk) || rd_kafka_q_len(rk->rk_ops) ||
                       (rk->rk_cgrp && (rk->rk_cgrp->rkcg_state !=
                                        RD_KAFKA_CGRP_STATE_TERM)))) {
+                svcSleepThread(1000);
                 rd_ts_t sleeptime = rd_kafka_timers_next(
                     &rk->rk_timers, 1000 * 1000 /*1s*/, 1 /*lock*/);
                 /* Use ceiling division to avoid calling serve with a 0 ms
@@ -2626,7 +2736,7 @@ rd_kafka_t *rd_kafka_new(rd_kafka_type_t type,
         /* Wait for background threads to fully initialize so that
          * the client instance is fully functional at the time it is
          * returned from the constructor. */
-        if (rd_kafka_init_wait(rk, 60 * 1000) != 0) {
+        if (rd_kafka_init_wait(rk, 10 * 1000) != 0) {
                 /* This should never happen unless there is a bug
                  * or the OS is not scheduling the background threads.
                  * Either case there is no point in handling this gracefully
@@ -4711,7 +4821,7 @@ static void rd_kafka_DescribeGroups_resp_cb(rd_kafka_t *rk,
                                             void *opaque) {
         struct list_groups_state *state;
         const int log_decode_errors = LOG_ERR;
-        int cnt;
+        int32_t cnt;
 
         if (err == RD_KAFKA_RESP_ERR__DESTROY) {
                 /* 'state' has gone out of scope due to list_groups()
@@ -4730,7 +4840,7 @@ static void rd_kafka_DescribeGroups_resp_cb(rd_kafka_t *rk,
         while (cnt-- > 0) {
                 int16_t ErrorCode;
                 rd_kafkap_str_t Group, GroupState, ProtoType, Proto;
-                int MemberCnt;
+                int32_t MemberCnt;
                 struct rd_kafka_group_info *gi;
 
                 if (state->grplist->group_cnt == state->grplist_size) {
@@ -4832,7 +4942,7 @@ static void rd_kafka_ListGroups_resp_cb(rd_kafka_t *rk,
         const int log_decode_errors = LOG_ERR;
         int16_t ErrorCode;
         char **grps = NULL;
-        int cnt, grpcnt, i = 0;
+        int32_t cnt, grpcnt, i = 0;
 
         if (err == RD_KAFKA_RESP_ERR__DESTROY) {
                 /* 'state' is no longer in scope because

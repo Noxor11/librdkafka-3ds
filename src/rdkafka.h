@@ -4999,9 +4999,9 @@ typedef struct rd_kafka_metadata_partition {
         int32_t id;              /**< Partition Id */
         rd_kafka_resp_err_t err; /**< Partition error reported by broker */
         int32_t leader;          /**< Leader broker */
-        int replica_cnt;         /**< Number of brokers in \p replicas */
+        int32_t replica_cnt;         /**< Number of brokers in \p replicas */
         int32_t *replicas;       /**< Replica brokers */
-        int isr_cnt;             /**< Number of ISR brokers in \p isrs */
+        int32_t isr_cnt;             /**< Number of ISR brokers in \p isrs */
         int32_t *isrs;           /**< In-Sync-Replica brokers */
 } rd_kafka_metadata_partition_t;
 
@@ -5010,7 +5010,7 @@ typedef struct rd_kafka_metadata_partition {
  */
 typedef struct rd_kafka_metadata_topic {
         char *topic;       /**< Topic name */
-        int partition_cnt; /**< Number of partitions in \p partitions*/
+        int32_t partition_cnt; /**< Number of partitions in \p partitions*/
         struct rd_kafka_metadata_partition *partitions; /**< Partitions */
         rd_kafka_resp_err_t err; /**< Topic error reported by broker */
 } rd_kafka_metadata_topic_t;
@@ -5020,10 +5020,10 @@ typedef struct rd_kafka_metadata_topic {
  * @brief Metadata container
  */
 typedef struct rd_kafka_metadata {
-        int broker_cnt; /**< Number of brokers in \p brokers */
+        int32_t broker_cnt; /**< Number of brokers in \p brokers */
         struct rd_kafka_metadata_broker *brokers; /**< Brokers */
 
-        int topic_cnt; /**< Number of topics in \p topics */
+        int32_t topic_cnt; /**< Number of topics in \p topics */
         struct rd_kafka_metadata_topic *topics; /**< Topics */
 
         int32_t orig_broker_id; /**< Broker originating this metadata */
@@ -5169,7 +5169,7 @@ struct rd_kafka_group_info {
         char *protocol_type;                    /**< Group protocol type */
         char *protocol;                         /**< Group protocol */
         struct rd_kafka_group_member_info *members; /**< Group members */
-        int member_cnt;                             /**< Group member count */
+        int32_t member_cnt;                             /**< Group member count */
 };
 
 /**
@@ -5179,7 +5179,7 @@ struct rd_kafka_group_info {
  */
 struct rd_kafka_group_list {
         struct rd_kafka_group_info *groups; /**< Groups */
-        int group_cnt;                      /**< Group count */
+        int32_t group_cnt;                      /**< Group count */
 };
 
 
